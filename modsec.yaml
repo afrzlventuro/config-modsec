@@ -6,8 +6,8 @@ metadata:
 data:
   modsecurity.conf: |
     SecRuleEngine On
-    Include /usr/local/openresty/nginx/conf/modsecurity/crs-setup.conf
-    Include /usr/local/openresty/nginx/conf/modsecurity/rules/*.conf
+    /etc/nginx/modsec/crs-setup.conf
+    /etc/nginx/modsec/rules/*.conf
     
     SecRequestBodyAccess On
     SecRequestBodyLimit 0
