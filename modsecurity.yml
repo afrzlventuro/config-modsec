@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-modsec-config
+  namespace: ingress-nginx
+data:
+  modsecurity.conf: |
+    SecRuleEngine On
+    Include /usr/local/openresty/nginx/conf/modsecurity/crs-setup.conf
+    Include /usr/local/openresty/nginx/conf/modsecurity/rules/*.conf
+    
+    SecRequestBodyAccess On
+    SecRequestBodyLimit 0
+    SecRequestBodyNoFilesLimit 0
+    SecRequestBodyLimitAction Reject
+    SecRule REQBODY_ERROR "!@eq 0" "id:'200002', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.'"
+    SecRule MULTIPART_STRICT_ERROR "!@eq 0" "id:'200003',phase:2,t:none,log,deny,status:400,msg:'Multipart request body failed strict validation.'"
+    SecRule MULTIPART_UNMATCHED_BOUNDARY "@eq 1" "id:'200004',phase:2,t:none,log,deny,msg:'Multipart parser detected a possible unmatched boundary.'"
+    SecPcreMatchLimit 1000
+    SecPcreMatchLimitRecursion 1000
+    SecRule TX:/^MSC_/ "!@streq 0" "id:'200005',phase:2,t:none,deny,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+    SecResponseBodyAccess On
+    SecResponseBodyMimeType text/plain text/html text/xml
+    SecResponseBodyLimit 0
+    SecResponseBodyLimitAction ProcessPartial
+    SecTmpDir /tmp/
+    SecDataDir /tmp/
+    
+    SecAuditEngine RelevantOnly
+    SecAuditLogRelevantStatus "^(?:5|4(?!04))"
+    SecAuditLogParts ABIJDEFHZ
+    SecAuditLogType Serial
+    SecAuditLog /var/log/modsec_audit.log
+    
+    SecArgumentSeparator &
+    SecCookieFormat 0
+    SecUnicodeMapFile unicode.mapping 20127
+    SecStatusEngine On
