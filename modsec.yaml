@@ -1,58 +1,124 @@
 apiVersion: v1
+data:
+  crs-setup.conf: >-
+    SecDefaultAction "phase:1,log,auditlog,pass"
+
+    SecDefaultAction "phase:2,log,auditlog,pass"
+
+
+    SecRuleRemoveById 200002
+
+    SecRuleRemoveById 960013
+
+    SecRuleRemoveById 950003
+
+    SecRuleRemoveById 960023
+
+    SecRuleRemoveById 981172
+
+    SecRuleRemoveById 920170
+
+    SecRuleRemoveById 920420
+
+
+    SecRule REQUEST_HEADERS:Content-Type "@contains
+    application/x-sentry-envelope" "id:100000,phase:1,allow,log"
+
+    SecRule REQUEST_BODY "@rx
+    data:([a-zA-Z0-9\+\-\.]+\/[a-zA-Z0-9\+\-\.]+);base64,"
+    "id:100002,phase:2,allow,ctl:ruleEngine=DetectionOnly"
+
+
+    SecAction  "id:900200,  phase:1,  nolog,  pass,  t:none, 
+    setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT PATCH DELETE'"
+
+
+    SecCollectionTimeout 600
+
+
+    SecAction  "id:900990,  phase:1,  nolog,  pass,  t:none, 
+    setvar:tx.crs_setup_version=320"
+  modsecurity.conf: >-
+    SecRuleEngine On
+
+    /etc/nginx/modsec/crs-setup.conf
+
+    /etc/nginx/modsec/rules/*.conf
+
+
+    SecRequestBodyAccess On
+
+    SecRequestBodyLimit 0
+
+    SecRequestBodyNoFilesLimit 0
+
+    SecRequestBodyLimitAction Reject
+
+    SecRule REQBODY_ERROR "!@eq 0" "id:'200002',
+    phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.'"
+
+    SecRule MULTIPART_STRICT_ERROR "!@eq 0"
+    "id:'200003',phase:2,t:none,log,deny,status:400,msg:'Multipart request body
+    failed strict validation.'"
+
+    SecRule MULTIPART_UNMATCHED_BOUNDARY "@eq 1"
+    "id:'200004',phase:2,t:none,log,deny,msg:'Multipart parser detected a
+    possible unmatched boundary.'"
+
+    SecPcreMatchLimit 1000
+
+    SecPcreMatchLimitRecursion 1000
+
+    SecRule TX:/^MSC_/ "!@streq 0"
+    "id:'200005',phase:2,t:none,deny,msg:'ModSecurity internal error flagged:
+    %{MATCHED_VAR_NAME}'"
+
+    SecResponseBodyAccess On
+
+    SecResponseBodyMimeType text/plain text/html text/xml
+
+    SecResponseBodyLimit 0
+
+    SecResponseBodyLimitAction ProcessPartial
+
+    SecTmpDir /tmp/
+
+    SecDataDir /tmp/
+
+
+    SecAuditEngine RelevantOnly
+
+    SecAuditLogRelevantStatus "^(?:5|4(?!04))"
+
+    SecAuditLogParts ABIJDEFHZ
+
+    SecAuditLogType Serial
+
+    SecAuditLog /var/log/modsec_audit.log
+
+
+    SecArgumentSeparator &
+
+    SecCookieFormat 0
+
+    SecUnicodeMapFile unicode.mapping 20127
+
+    SecStatusEngine On
 kind: ConfigMap
 metadata:
-  name: nginx-modsec-config
-  namespace: ingress-nginx
-data:
-  modsecurity.conf: |
-    SecRuleEngine On
-    /etc/nginx/modsec/crs-setup.conf
-    /etc/nginx/modsec/rules/*.conf
-    
-    SecRequestBodyAccess On
-    SecRequestBodyLimit 0
-    SecRequestBodyNoFilesLimit 0
-    SecRequestBodyLimitAction Reject
-    SecRule REQBODY_ERROR "!@eq 0" "id:'200002', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.'"
-    SecRule MULTIPART_STRICT_ERROR "!@eq 0" "id:'200003',phase:2,t:none,log,deny,status:400,msg:'Multipart request body failed strict validation.'"
-    SecRule MULTIPART_UNMATCHED_BOUNDARY "@eq 1" "id:'200004',phase:2,t:none,log,deny,msg:'Multipart parser detected a possible unmatched boundary.'"
-    SecPcreMatchLimit 1000
-    SecPcreMatchLimitRecursion 1000
-    SecRule TX:/^MSC_/ "!@streq 0" "id:'200005',phase:2,t:none,deny,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
-    SecResponseBodyAccess On
-    SecResponseBodyMimeType text/plain text/html text/xml
-    SecResponseBodyLimit 0
-    SecResponseBodyLimitAction ProcessPartial
-    SecTmpDir /tmp/
-    SecDataDir /tmp/
-    
-    SecAuditEngine RelevantOnly
-    SecAuditLogRelevantStatus "^(?:5|4(?!04))"
-    SecAuditLogParts ABIJDEFHZ
-    SecAuditLogType Serial
-    SecAuditLog /var/log/modsec_audit.log
-    
-    SecArgumentSeparator &
-    SecCookieFormat 0
-    SecUnicodeMapFile unicode.mapping 20127
-    SecStatusEngine On
-  crs-setup.conf: |
-    SecDefaultAction "phase:1,log,auditlog,pass"
-    SecDefaultAction "phase:2,log,auditlog,pass"
-    
-    SecRuleRemoveById 200002
-    SecRuleRemoveById 960013
-    SecRuleRemoveById 950003
-    SecRuleRemoveById 960023
-    SecRuleRemoveById 981172
-    SecRuleRemoveById 920170
-    SecRuleRemoveById 920420
-    
-    SecRule REQUEST_HEADERS:Content-Type "@contains application/x-sentry-envelope" "id:100000,phase:1,allow,log"
-    SecRule REQUEST_BODY "@rx data:([a-zA-Z0-9\+\-\.]+\/[a-zA-Z0-9\+\-\.]+);base64," "id:100002,phase:2,allow,ctl:ruleEngine=DetectionOnly"
-    
-    SecAction  "id:900200,  phase:1,  nolog,  pass,  t:none,  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT PATCH DELETE'"
-    
-    SecCollectionTimeout 600
-    
-    SecAction  "id:900990,  phase:1,  nolog,  pass,  t:none,  setvar:tx.crs_setup_version=320"
+  creationTimestamp: '2024-11-18T10:16:29Z'
+  managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data:
+          .: {}
+          f:crs-setup.conf: {}
+          f:modsecurity.conf: {}
+      manager: rancher
+      operation: Update
+      time: '2024-11-18T10:16:29Z'
+  name: config
+  namespace: afrizal
+  resourceVersion: '717566'
+  uid: a12e75f6-a0f2-4aca-84b4-60aa9b33f5dd
