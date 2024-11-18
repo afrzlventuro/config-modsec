@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-modsec-config
+  namespace: ingress-nginx
+data:
+  modsecurity.conf: |
+    # File modsecurity.conf yang diatur di path yang benar
+    SecRuleEngine On
+    Include /etc/nginx/modsec/crs-setup.conf
+    Include /etc/nginx/modsec/rules/*.conf
+    # Pengaturan lainnya
+  crs-setup.conf: |
+    # Konfigurasi CRS
+    SecRuleEngine On
+    Include /etc/nginx/crs/*.conf
+    # Pengaturan CRS lainnya
