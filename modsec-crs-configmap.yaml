@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-modsec-crs-config
+  namespace: ingress-nginx
+data:
+  crs.conf: |
+    SecDefaultAction "phase:1,log,auditlog,pass"
+    SecDefaultAction "phase:2,log,auditlog,pass"
+    
+    SecRuleRemoveById 200002
+    SecRuleRemoveById 960013
+    SecRuleRemoveById 950003
+    SecRuleRemoveById 960023
+    SecRuleRemoveById 981172
+    SecRuleRemoveById 920170
+    SecRuleRemoveById 920420
+    
+    SecRule REQUEST_HEADERS:Content-Type "@contains application/x-sentry-envelope" "id:100000,phase:1,allow,log"
+    SecRule REQUEST_BODY "@rx data:([a-zA-Z0-9\+\-\.]+\/[a-zA-Z0-9\+\-\.]+);base64," "id:100002,phase:2,allow,ctl:ruleEngine=DetectionOnly"
+    
+    SecAction  "id:900200,  phase:1,  nolog,  pass,  t:none,  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT PATCH DELETE'"
+    
+    SecCollectionTimeout 600
+    
+    SecAction  "id:900990,  phase:1,  nolog,  pass,  t:none,  setvar:tx.crs_setup_version=320"
